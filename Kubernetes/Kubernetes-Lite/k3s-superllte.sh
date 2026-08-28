@@ -31,6 +31,20 @@ KVVERSION="v1.2.2"
 # K3S Version
 k3sVersion="v1.34.9+k3s1"
 
+# Rescources
+mkdir code
+echo "apiVersion: v1" > namespace.yaml
+echo "kind: Namespace" >> namespace.yaml
+echo "metadata:" >> namespace.yaml
+echo "  name: metallb-system" >> namespace.yaml
+echo "  labels:" >> namespace.yaml
+echo "    app: metallb" >> namespace.yaml
+wget https://raw.githubusercontent.com/longhorn/longhorn/v1.12.0/deploy/longhorn.yaml -P code
+wget https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/l2Advertisement.yaml -P code
+wget https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml -P code
+wget https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml -P code
+
+
 # Set the IP addresses of the node and work nodes
 node1=192.168.3.11
 node2=192.168.3.12
@@ -217,7 +231,6 @@ echo -e " \033[32;5mBe patient as it downloads and configures a number of pods i
 
 # Step 16: Install Longhorn (using modified Official to pin to Longhorn Nodes)
 echo -e " \033[32;5mInstalling Longhorn - It can take a while for all pods to deploy...\033[0m"
-kubectl apply -f code/longhorn.yaml # https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/Longhorn/longhorn.yaml
 kubectl apply -f code/longhorn.yaml # https://raw.githubusercontent.com/longhorn/longhorn/v1.10.1/deploy/longhorn.yaml
 kubectl get pods \
 --namespace longhorn-system \
