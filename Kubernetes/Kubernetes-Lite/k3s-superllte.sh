@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 echo -e " \033[33;5m    __  _          _        ___                            \033[0m"
@@ -29,20 +28,13 @@ echo -e " \033[32;5m                                                           \
 KVVERSION="v1.2.2"
 
 # K3S Version
-k3sVersion="v1.34.9+k3s1"
+k3sVersion="v1.35.6+k3s1"
 
-# Rescources
-mkdir code
-echo "apiVersion: v1" > namespace.yaml
-echo "kind: Namespace" >> namespace.yaml
-echo "metadata:" >> namespace.yaml
-echo "  name: metallb-system" >> namespace.yaml
-echo "  labels:" >> namespace.yaml
-echo "    app: metallb" >> namespace.yaml
-wget https://raw.githubusercontent.com/longhorn/longhorn/v1.12.0/deploy/longhorn.yaml -P code
-wget https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/l2Advertisement.yaml -P code
-wget https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml -P code
-wget https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml -P code
+# MetalLB Version (used to build the manifest URL).
+METALLB_VERSION="v0.16.0"
+
+# Longhorn Version (used to build the manifest URL).
+LONGHORN_VERSION="v1.12.1"
 
 
 # Set the IP addresses of the node and work nodes
@@ -51,7 +43,7 @@ node2=192.168.3.12
 node3=192.168.3.13
 
 # User of remote machines
-user=ubuntu
+user=ansible
 
 # Interface used on remotes
 interface=eth0
@@ -66,12 +58,28 @@ nodes=($node2 $node3)
 all=($node1 $node2 $node3)
 
 #Loadbalancer IP range
-lbrange=192.168.3.15-192.168.3.62
+lbrange=192.168.3.15-192.168.3.30
 
 #ssh certificate name variable
 certName=id_ansible_ansible01_ed25519
 
-############################################
+#############################################
+#            GET RESSOURCES                 #
+#############################################
+
+mkdir code
+wget https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml -P code
+wget https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/l2Advertisement.yaml -P code
+wget https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml -P code
+wget https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml -P code
+echo "apiVersion: v1" > code/namespace.yaml
+echo "kind: Namespace" >> code/namespace.yaml
+echo "metadata:" >> code/namespace.yaml
+echo "  name: metallb-system" >> code/namespace.yaml
+echo "  labels:" >> code/namespace.yaml
+echo "    app: metallb" >> code/namespace.yaml
+
+#############################################
 #            DO NOT EDIT BELOW              #
 #############################################
 # For testing purposes - in case time is wrong due to VM snapshots
@@ -170,11 +178,11 @@ done
 
 
 # Step 7: Install kube-vip as network LoadBalancer - Install the kube-vip Cloud Provider
-kubectl apply -f code/kube-vip-cloud-controller.yaml #https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml
+kubectl apply -f code/kube-vip-cloud-controller.yaml
 
 # Step 8: Install Metallb
-kubectl apply -f code/namespace.yaml #https://raw.githubusercontent.com/metallb/metallb/v0.14.8/manifests/namespace.yaml
-kubectl apply -f code/metallb-native.yaml #https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
+kubectl apply -f code/namespace.yaml
+kubectl apply -f code/metallb-native.yaml
 # Download ipAddressPool and configure using lbrange above
 curl -sO https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/ipAddressPool
 cat ipAddressPool | sed 's/$lbrange/'$lbrange'/g' > $HOME/ipAddressPool.yaml
@@ -185,7 +193,7 @@ kubectl wait --namespace metallb-system \
                 --selector=component=controller \
                 --timeout=120s
 kubectl apply -f ipAddressPool.yaml
-kubectl apply -f code/l2Advertisement.yaml #https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/l2Advertisement.yaml
+kubectl apply -f code/l2Advertisement.yaml
 
 kubectl get nodes
 kubectl get svc
@@ -203,7 +211,7 @@ helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
 kubectl create namespace cattle-system
 
 # Step 13: Install Cert-Manager
-kubectl apply -f code/cert-manager.crds.yaml #https://github.com/cert-manager/cert-manager/releases/download/v1.19.2/cert-manager.crds.yaml
+kubectl apply -f code/cert-manager.crds.yaml
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
 helm install cert-manager jetstack/cert-manager \
@@ -231,7 +239,7 @@ echo -e " \033[32;5mBe patient as it downloads and configures a number of pods i
 
 # Step 16: Install Longhorn (using modified Official to pin to Longhorn Nodes)
 echo -e " \033[32;5mInstalling Longhorn - It can take a while for all pods to deploy...\033[0m"
-kubectl apply -f code/longhorn.yaml # https://raw.githubusercontent.com/longhorn/longhorn/v1.10.1/deploy/longhorn.yaml
+kubectl apply -f code/longhorn.yaml
 kubectl get pods \
 --namespace longhorn-system \
 --watch
