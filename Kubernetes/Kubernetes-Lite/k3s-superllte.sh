@@ -49,7 +49,7 @@ user=ubuntu
 interface=eth0
 
 # Set the virtual IP address (VIP)
-vip=192.168.15.14
+vip=192.168.3.14
 
 # Array of node nodes
 nodes=($node2 $node3)
