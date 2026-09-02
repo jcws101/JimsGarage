@@ -43,7 +43,7 @@ node2=192.168.3.12
 node3=192.168.3.13
 
 # User of remote machines
-user=ansible
+user=ubuntu
 
 # Interface used on remotes
 interface=eth0
@@ -61,7 +61,7 @@ all=($node1 $node2 $node3)
 lbrange=192.168.3.15-192.168.3.30
 
 #ssh certificate name variable
-certName=id_ansible_ansible01_ed25519
+certName=id_ubuntu_ed25519
 
 # Set a Resource Folder where yaml Files can be stored
 resourcesfolder="resources"
