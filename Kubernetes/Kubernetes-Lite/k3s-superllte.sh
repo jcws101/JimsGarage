@@ -49,7 +49,7 @@ user=ansible
 interface=eth0
 
 # Set the virtual IP address (VIP)
-vip=192.168.3.14
+vip=192.168.15.14
 
 # Array of node nodes
 nodes=($node2 $node3)
@@ -68,10 +68,10 @@ certName=id_ansible_ansible01_ed25519
 #############################################
 
 mkdir code
-wget https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml -P code
-wget https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/l2Advertisement.yaml -P code
-wget https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml -P code
-wget https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml -P code
+wget -O - https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml > code/longhorn.yaml
+wget -O - https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/l2Advertisement.yaml > code/l2Advertisement.yaml
+wget -O - https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml > code/kube-vip-cloud-controller.yaml
+wget -O - https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml > code/metallb-native.yaml
 echo "apiVersion: v1" > code/namespace.yaml
 echo "kind: Namespace" >> code/namespace.yaml
 echo "metadata:" >> code/namespace.yaml
