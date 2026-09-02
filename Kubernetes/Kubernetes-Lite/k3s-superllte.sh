@@ -49,7 +49,7 @@ user=ansible
 interface=eth0
 
 # Set the virtual IP address (VIP)
-vip=192.168.3.14
+vip=192.168.15.14
 
 # Array of node nodes
 nodes=($node2 $node3)
@@ -63,21 +63,24 @@ lbrange=192.168.3.15-192.168.3.30
 #ssh certificate name variable
 certName=id_ansible_ansible01_ed25519
 
+# Set a Resource Folder where yaml Files can be stored
+resourcesfolder="resources"
+
 #############################################
-#            GET RESSOURCES                 #
+#            GET RESOURCES                 #
 #############################################
 
-mkdir code
-wget -O - https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml > code/longhorn.yaml
-wget -O - https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/l2Advertisement.yaml > code/l2Advertisement.yaml
-wget -O - https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml > code/kube-vip-cloud-controller.yaml
-wget -O - https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml > code/metallb-native.yaml
-echo "apiVersion: v1" > code/namespace.yaml
-echo "kind: Namespace" >> code/namespace.yaml
-echo "metadata:" >> code/namespace.yaml
-echo "  name: metallb-system" >> code/namespace.yaml
-echo "  labels:" >> code/namespace.yaml
-echo "    app: metallb" >> code/namespace.yaml
+mkdir $resourcesfolder
+wget -O - https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml > $resourcesfolder/longhorn.yaml
+wget -O - https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/l2Advertisement.yaml > $resourcesfolder/l2Advertisement.yaml
+wget -O - https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml > $resourcesfolder/kube-vip-cloud-controller.yaml
+wget -O - https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml > $resourcesfolder/metallb-native.yaml
+echo "apiVersion: v1" > $resourcesfolder/namespace.yaml
+echo "kind: Namespace" >> $resourcesfolder/namespace.yaml
+echo "metadata:" >> $resourcesfolder/namespace.yaml
+echo "  name: metallb-system" >> $resourcesfolder/namespace.yaml
+echo "  labels:" >> $resourcesfolder/namespace.yaml
+echo "    app: metallb" >> $resourcesfolder/namespace.yaml
 
 #############################################
 #            DO NOT EDIT BELOW              #
@@ -178,11 +181,11 @@ done
 
 
 # Step 7: Install kube-vip as network LoadBalancer - Install the kube-vip Cloud Provider
-kubectl apply -f code/kube-vip-cloud-controller.yaml
+kubectl apply -f $resourcesfolder/kube-vip-cloud-controller.yaml
 
 # Step 8: Install Metallb
-kubectl apply -f code/namespace.yaml
-kubectl apply -f code/metallb-native.yaml
+kubectl apply -f $resourcesfolder/namespace.yaml
+kubectl apply -f $resourcesfolder/metallb-native.yaml
 # Download ipAddressPool and configure using lbrange above
 curl -sO https://raw.githubusercontent.com/JamesTurland/JimsGarage/main/Kubernetes/K3S-Deploy/ipAddressPool
 cat ipAddressPool | sed 's/$lbrange/'$lbrange'/g' > $HOME/ipAddressPool.yaml
@@ -193,7 +196,7 @@ kubectl wait --namespace metallb-system \
                 --selector=component=controller \
                 --timeout=120s
 kubectl apply -f ipAddressPool.yaml
-kubectl apply -f code/l2Advertisement.yaml
+kubectl apply -f $resourcesfolder/l2Advertisement.yaml
 
 kubectl get nodes
 kubectl get svc
@@ -211,7 +214,7 @@ helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
 kubectl create namespace cattle-system
 
 # Step 13: Install Cert-Manager
-kubectl apply -f code/cert-manager.crds.yaml
+kubectl apply -f $resourcesfolder/cert-manager.crds.yaml
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
 helm install cert-manager jetstack/cert-manager \
@@ -239,7 +242,7 @@ echo -e " \033[32;5mBe patient as it downloads and configures a number of pods i
 
 # Step 16: Install Longhorn (using modified Official to pin to Longhorn Nodes)
 echo -e " \033[32;5mInstalling Longhorn - It can take a while for all pods to deploy...\033[0m"
-kubectl apply -f code/longhorn.yaml
+kubectl apply -f $resourcesfolder/longhorn.yaml
 kubectl get pods \
 --namespace longhorn-system \
 --watch
